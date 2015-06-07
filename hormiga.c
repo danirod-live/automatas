@@ -71,6 +71,18 @@ void mostrar(char tablero[TAM][TAM], Uint32* pixels)
     }
 }
 
+void iniciar_problema(struct problema_t *problema)
+{
+    for (int x = 0; x < TAM; x++) {
+        for (int y = 0; y < TAM; y++) {
+            problema->tablero[x][y] = 0;
+        }
+    }
+    problema->hormiga.x = TAM / 2;
+    problema->hormiga.y = TAM / 2;
+    problema->hormiga.direccion = 0;
+}
+
 int main(int argc, char** argv)
 {
     SDL_Window* window;
@@ -92,13 +104,7 @@ int main(int argc, char** argv)
             SDL_TEXTUREACCESS_STREAMING, TAM, TAM);
 
     struct problema_t problema;
-    for (int x = 0; x < TAM; x++) {
-        for (int y = 0; y < TAM; y++) {
-            problema.tablero[x][y] = 0;
-        }
-    }
-    problema.hormiga.x = 100;
-    problema.hormiga.y = 100;
+    iniciar_problema(&problema);
 
     while (is_active) {
         while (SDL_WaitEventTimeout(&event, 10)) {
