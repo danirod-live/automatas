@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;
-    
+
     SDL_Event event;
     int is_active = 1;
     int debe_mostrar = 1;
@@ -92,6 +92,11 @@ int main(int argc, char** argv)
             SDL_TEXTUREACCESS_STREAMING, TAM, TAM);
 
     struct problema_t problema;
+    for (int x = 0; x < TAM; x++) {
+        for (int y = 0; y < TAM; y++) {
+            problema.tablero[x][y] = 0;
+        }
+    }
     problema.hormiga.x = 100;
     problema.hormiga.y = 100;
 
