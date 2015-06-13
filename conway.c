@@ -5,8 +5,8 @@
 #include <SDL2/SDL.h>
 #include "Viewer.h"
 
-#define TAM 80
-#define SCALE 6
+#define TAM 40
+#define SCALE 10
 
 /** Estructura de datos con el tablero que usamos durante el juego. */
 static char tablero[TAM][TAM];
@@ -103,17 +103,44 @@ int main(int argc, char** argv)
     window.scale = SCALE;
     init(&contexto, &window);
 
+    int play = 0;
+    int drawing = 0;
+    int x, y;
     while (is_active) {
         while (SDL_WaitEventTimeout(&event, 10)) {
             switch (event.type) {
                 case SDL_QUIT:
                     is_active = 0;
                     break;
+                case SDL_MOUSEBUTTONDOWN:
+                    drawing = 1;
+                    x = event.button.x / SCALE;
+                    y = event.button.y / SCALE;
+                    tablero[x][y] = !tablero[x][y];
+                    renderizar(&contexto, &mostrar);
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    drawing = 0;
+                    break;
+                case SDL_MOUSEMOTION:
+                    if (drawing) {
+                        x = event.motion.x / SCALE;
+                        y = event.motion.y / SCALE;
+                        tablero[x][y] = !tablero[x][y];
+                        renderizar(&contexto, &mostrar);
+                    }
+                    break;
+                case SDL_KEYDOWN:
+                    if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                        play = !play;
+                    }
             }
         }
 
         if (SDL_GetTicks() - last_delta > 50) {
-            iterar(tablero);
+            if (play) {
+                iterar(tablero);
+            }
             renderizar(&contexto, &mostrar);
             last_delta = SDL_GetTicks();
         }
