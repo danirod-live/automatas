@@ -15,6 +15,9 @@ hormiga: Viewer.o hormiga.o
 conway: Viewer.o conway.o
 	$(CC) -o $@ $(LDFLAGS) $^
 
+ppt: Viewer.o ppt.o
+	$(CC) -o $@ $(LDFLAGS) $^
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
