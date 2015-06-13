@@ -3,15 +3,20 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
+#include "Viewer.h"
+
 #define NORTE 0
 #define ESTE 1
 #define SUR 2
 #define OESTE 3
 
-#define TAM 256
+#define TAM 80
+#define SCALE 8
 
 #define IZQUIERDA 3
 #define DERECHA 1
+
+#define INFINITO
 
 struct hormiga_t
 {
@@ -23,7 +28,13 @@ struct problema_t
 {
     char tablero[TAM][TAM];
     struct hormiga_t hormiga;
+
+    int reglas;
+    int* giros;
+    Uint32* colores;
 };
+
+static struct problema_t problema;
 
 void girar(struct hormiga_t* hormiga, int direccion) {
     hormiga->direccion = (hormiga->direccion + direccion) % 4;
@@ -31,47 +42,57 @@ void girar(struct hormiga_t* hormiga, int direccion) {
 
 void avanzar(struct hormiga_t* hormiga) {
     switch (hormiga->direccion) {
-        case NORTE: hormiga->y--; return;
-        case SUR: hormiga->y++; return;
-        case ESTE: hormiga->x++; return;
-        case OESTE: hormiga->x--; return;
+        case NORTE: hormiga->y--; break;
+        case SUR: hormiga->y++; break;
+        case ESTE: hormiga->x++; break;
+        case OESTE: hormiga->x--; break;
     }
+#ifdef INFINITO
+    hormiga->x = (hormiga->x + TAM) % TAM;
+    hormiga->y = (hormiga->y + TAM) % TAM;
+#endif
 }
 
 void paso(struct problema_t* problema)
 {
     int x = problema->hormiga.x;
     int y = problema->hormiga.y;
-    char color = problema->tablero[x][y];
-    switch (color) {
-        case 0: // NEGRO
-            problema->tablero[x][y] = 1;
-            girar(&problema->hormiga, IZQUIERDA);
-            break;
-        case 1: // BLANCO
-            problema->tablero[x][y] = 0;
-            girar(&problema->hormiga, DERECHA);
-            break;
+#ifndef INFINITO
+    if (x < 0 || x == TAM || y < 0 || y >= TAM) {
+        return;
     }
+#endif
+    char color = problema->tablero[x][y];
+
+    problema->tablero[x][y]++;
+    problema->tablero[x][y] %= problema->reglas;
+    girar(&problema->hormiga, problema->giros[color]);
     avanzar(&problema->hormiga);
 }
 
-void mostrar(char tablero[TAM][TAM], Uint32* pixels)
+void mostrar(Uint32* pixels)
 {
     for (int y = 0; y < TAM; y++) {
         for (int x = 0; x < TAM; x++) {
-            char celda = tablero[x][y];
-            if (celda == 0) {
-                *pixels = 0;
-            } else {
-                *pixels = -1;
-            }
-            pixels++;
+            char celda = problema.tablero[x][y];
+            *pixels++ = problema.colores[celda];
         }
     }
 }
 
-void iniciar_problema(struct problema_t *problema)
+Uint32 color_aleatorio() {
+    char rojo = rand();
+    char verde = rand();
+    char azul = rand();
+
+    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        return rojo << 24 | verde << 16 | azul << 8 | 0xFF;
+    #else
+        return 0xFF << 24 | azul << 16 | verde << 8 | rojo;
+    #endif
+}
+
+void iniciar_problema(char* reglas, struct problema_t *problema)
 {
     for (int x = 0; x < TAM; x++) {
         for (int y = 0; y < TAM; y++) {
@@ -81,30 +102,46 @@ void iniciar_problema(struct problema_t *problema)
     problema->hormiga.x = TAM / 2;
     problema->hormiga.y = TAM / 2;
     problema->hormiga.direccion = 0;
+
+    problema->reglas = strlen(reglas);
+    problema->giros = (int *) malloc(problema->reglas * sizeof(int));
+    problema->colores = (Uint32* ) malloc(problema->reglas * sizeof(Uint32));
+    for (int i = 0; i < problema->reglas; i++) {
+        char regla = reglas[i];
+        problema->colores[i] = color_aleatorio();
+        if (regla == 'I' || regla == 'i') {
+            problema->giros[i] = IZQUIERDA;
+        } else if (regla == 'D' || regla == 'd') {
+            problema->giros[i] = DERECHA;
+        } else {
+            printf("No entiendo estas reglas.\n");
+            exit(1);
+        }
+    }
+
+    problema->colores[0] = 0;
+    problema->colores[1] = -1;
 }
 
 int main(int argc, char** argv)
 {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
+    Contexto contexto;
+    Window window;
+    window.title = "Hormiga de Langton";
+    window.width = window.height = TAM;
+    window.scale = SCALE;
 
     SDL_Event event;
     int is_active = 1;
-    int debe_mostrar = 1;
     int last_delta = SDL_GetTicks();
-    void* pixels;
-    int pitch;
 
-    SDL_Init(SDL_INIT_EVERYTHING);
-    window = SDL_CreateWindow("Hormiga", SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, 2 * TAM, 2 * TAM, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-            SDL_TEXTUREACCESS_STREAMING, TAM, TAM);
+    if (argc < 2) {
+        iniciar_problema("DI", &problema);
+    } else {
+        iniciar_problema(argv[1], &problema);
+    }
 
-    struct problema_t problema;
-    iniciar_problema(&problema);
+    init(&contexto, &window);
 
     while (is_active) {
         while (SDL_WaitEventTimeout(&event, 10)) {
@@ -115,23 +152,13 @@ int main(int argc, char** argv)
             }
         }
 
-       // if (debe_mostrar) {
-            for (int i = 0; i < 50; i++)
+       if (SDL_GetTicks() - last_delta > 50) {
+        for (int i = 0; i < 50; i++)
             paso(&problema);
-
-            SDL_LockTexture(texture, NULL, &pixels, &pitch);
-            mostrar(problema.tablero, (Uint32*) pixels);
-            SDL_UnlockTexture(texture);
-
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-            //debe_mostrar = 0;
-       // }
+            renderizar(&contexto, mostrar);
+       }
     }
 
-    SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-
+    kill(&contexto);
     return 0;
 }
