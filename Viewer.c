@@ -53,7 +53,7 @@ int
 init(Contexto* contexto, Window* window)
 {
     // Intenta inicializar SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL Error: %s\n", SDL_GetError());
         return 1;
     }
