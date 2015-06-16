@@ -7,7 +7,7 @@ create_window(Window* window)
     return SDL_CreateWindow(window->title,
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             window->width * window->scale, window->height * window->scale,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            SDL_WINDOW_SHOWN);
 }
 
 static void
