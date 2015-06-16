@@ -7,7 +7,7 @@ create_window(Window* window)
     return SDL_CreateWindow(window->title,
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             window->width * window->scale, window->height * window->scale,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            SDL_WINDOW_SHOWN);
 }
 
 static void
@@ -53,7 +53,7 @@ int
 init(Contexto* contexto, Window* window)
 {
     // Intenta inicializar SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL Error: %s\n", SDL_GetError());
         return 1;
     }

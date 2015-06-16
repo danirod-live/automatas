@@ -91,9 +91,6 @@ int main(int argc, char** argv)
     Contexto contexto;
     SDL_Event event;
 
-    int is_active = 1;
-    int last_delta = SDL_GetTicks();
-
     // Inicializamos el tablero.
     memset(tablero, 0, sizeof(char) * TAM * TAM);
 
@@ -103,9 +100,12 @@ int main(int argc, char** argv)
     window.scale = SCALE;
     init(&contexto, &window);
 
+    int is_active = 1;
+    int last_delta = SDL_GetTicks();
     int play = 0;
     int drawing = 0;
     int x, y;
+
     while (is_active) {
         while (SDL_WaitEventTimeout(&event, 10)) {
             switch (event.type) {
